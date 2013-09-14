@@ -2,6 +2,7 @@ class UsersController < ApplicationController
   before_action :signed_in_user, only: [:edit, :update, :index, :destroy]
   before_action :correct_user,   only: [:edit, :update]
   before_action :admin_user,     only: :destroy
+  before_action :restrict_signup, only: [:new, :create]
 
   def index
     @users = User.paginate(page: params[:page])
@@ -39,8 +40,15 @@ class UsersController < ApplicationController
   end
 
   def destroy
-    User.find(params[:id]).destroy
-    flash[:success] = "User destroyed."
+
+    user=User.find(params[:id])
+    if(!current_user?(user))
+      user.destroy
+      flash[:success] = "User destroyed."
+    else
+      flash[:error] = "You can't destroy yourself dude..."
+    end
+
     redirect_to users_url
   end
   
@@ -61,7 +69,12 @@ class UsersController < ApplicationController
       @user = User.find(params[:id])
       redirect_to root_url, notice: "What the fuck are you trying to do??" unless current_user?(@user)
     end
+
     def admin_user
       redirect_to root_url unless current_user.admin?     
+    end
+    def restrict_signup
+      redirect_to root_url unless !signed_in?
+            
     end
 end
